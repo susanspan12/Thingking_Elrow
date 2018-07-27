@@ -1,3 +1,5 @@
+import sys
+import glob
 import serial
 
 opt_1 = b'1'
@@ -7,13 +9,34 @@ opt_4 = b'4'
 opt_5 = b'5'
 
 BAUD_RATE = 9600
-TEENSY_COM = 'COM7'
+TEENSY_COM_1 = None
 ser = None
 
+def serial_ports():
+
+    ports = ['COM%s' % (i + 1) for i in range(256)]
+    
+    result = []
+    for port in ports:
+        try:
+            s = serial.Serial(port)
+            s.close()
+            result.append(port)
+        except (OSError, serial.SerialException):
+            pass
+    return result
+
+# if __name__ == '__main__':
+#     print(serial_ports())
+
 def serial_init():
+	Teensy_ports = serial_ports()
+	TEENSY_COM_1 = Teensy_ports[0]
+	# print(TEENSY_COM_1)
+	
 	try:
 		global ser
-		ser = serial.Serial(TEENSY_COM, BAUD_RATE, timeout=1)
+		ser = serial.Serial(TEENSY_COM_1, BAUD_RATE, timeout=1)
 	except Exception:
 		raise IOError('Could not connect to Teensy')
 
