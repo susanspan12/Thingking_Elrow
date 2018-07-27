@@ -26,9 +26,6 @@ def serial_ports():
             pass
     return result
 
-# if __name__ == '__main__':
-#     print(serial_ports())
-
 def serial_init():
 	Teensy_ports = serial_ports()
 	TEENSY_COM_1 = Teensy_ports[0]
