@@ -4,7 +4,7 @@
 Python_code:
 -------------------------------------------------------
 Requirements: 
-Python 2.7
+Python 2.7, 
 Pyserial
 
 
