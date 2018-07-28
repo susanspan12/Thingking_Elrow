@@ -1,7 +1,16 @@
+//****************************************************************************************************************************
+//  Thingking Studio (Pty) Ltd
+//  Product: Elrow x Absolut Cathedral
+//****************************************************************************************************************************
+// This code runs on the Teensy 3.6 mounted in the housing in the plinth.
+// This controller must be connected to the USB cable provided during operation to receive comms from the touchscreen device.
+// Please take note that this controller is powered through the USB connected to the touch screen device.
+
 #include "FastLED.h"
 
 //----#DEFINES--------------------------------------------------------
 //****PIN DEFINES*****************************************************
+
 #define R_1_PWM_PIN 35
 #define G_1_PWM_PIN 36
 #define B_1_PWM_PIN 37
@@ -23,23 +32,23 @@
 #define DEBUG_BUTTON_PIN 34
 #define RELAY_PIN 39
 
-#define ANIMATION_TIME 30000    
-#define DEFAULT_ANIMATION_TIME 60000    
-#define RELAY_DELAY_TIME 4000    
-#define RELAY_START_TIME 2000    
+#define ANIMATION_TIME 10000            //TODO change to appropriate time
+#define DEFAULT_ANIMATION_TIME 60000    //TODO change to appropriate time
+#define RELAY_DELAY_TIME 3000           //TODO change to appropriate time
+#define RELAY_START_TIME 2500           //TODO change to appropriate time
 
 #define DEBUG_PRINTLN false
 
 //****SERIAL COMMS*****************************************************
 
-//Run animation 1 to 5 (0x01 to 0x05)
-const byte ANIMATION_BYTE_1 = '1';
-const byte ANIMATION_BYTE_2 = '2';
-const byte ANIMATION_BYTE_3 = '3';
-const byte ANIMATION_BYTE_4 = '4';
-const byte ANIMATION_BYTE_5 = '5';
-const byte YES_BYTE = 'Y';
-const byte NO_BYTE = 'N';
+//Run animation 1 to 5
+byte ANIMATION_BYTE_1 = '1';
+byte ANIMATION_BYTE_2 = '2';
+byte ANIMATION_BYTE_3 = '3';
+byte ANIMATION_BYTE_4 = '4';
+byte ANIMATION_BYTE_5 = '5';
+byte YES_BYTE = 'Y';
+byte NO_BYTE = 'N';
 
 //----Variable definitions--------------------------------------------
 //****Colour HSV******************************************************
@@ -61,15 +70,15 @@ float relay_start_time = -1;
 bool relay_start_flag = false;
 
 //Absolut theme hues
-const int THEME_HUE_BLUE = 160;
-const int THEME_HUE_PURPLE = 190;
-const int THEME_HUE_PINK = 224;
-const int THEME_HUE_AQUA = 128;
-const int THEME_HUE_YELLOW = 35;
+int THEME_HUE_BLUE = 160;
+int THEME_HUE_PURPLE = 190;
+int THEME_HUE_PINK = 224;
+int THEME_HUE_AQUA = 128;
+int THEME_HUE_YELLOW = 35;
 
 int theme_hues[] = {THEME_HUE_BLUE, THEME_HUE_PURPLE, THEME_HUE_PINK, THEME_HUE_AQUA, THEME_HUE_YELLOW};
 
-int rgb_pin_matrix[6][3] = {
+int rgb_pin_matrix[6][3] = {     //6 frames each with 3 pins (r, g and b)
   {R_1_PWM_PIN, G_1_PWM_PIN, B_1_PWM_PIN},
   {R_2_PWM_PIN, G_2_PWM_PIN, B_2_PWM_PIN},
   {R_3_PWM_PIN, G_3_PWM_PIN, B_3_PWM_PIN},
@@ -105,8 +114,9 @@ void setup() {
   }
   pinMode(DEBUG_BUTTON_PIN, INPUT);
   pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, LOW);
   delay(1000);
-  debug_sequence();   //TODO
+  //  debug_sequence();   //on startup, the debug sequence runs to see whether the order of the cables is correct and that each colour works as intended.
 }
 
 void loop() {
@@ -184,7 +194,6 @@ void debug_sequence() {
     }
   }
 }
-
 
 //-----------------Show lights----------------------------------------------------------------
 void showAnalogRGB( const CRGB& rgb, int frame) {
@@ -349,21 +358,21 @@ void default_6() {    //purple,blue scrolling
   int value_counter = 0;
   animation_start_time = millis();
   while (millis() - animation_start_time <= ANIMATION_TIME) {
-    for(int h= 0; h<2; h++){
-    for (int f = 0; f < 6; f++) {
-      showAnalogRGB(CHSV(theme_hues[h], 255, animation_5_values[value_counter]), f);
-      event_check();
-      delay(delay_anim * 2);
+    for (int h = 0; h < 2; h++) {
+      for (int f = 0; f < 6; f++) {
+        showAnalogRGB(CHSV(theme_hues[h], 255, animation_5_values[value_counter]), f);
+        event_check();
+        delay(delay_anim * 2);
+        value_counter++;
+        if (value_counter == 6) {
+          value_counter = 0;
+        }
+      }
       value_counter++;
       if (value_counter == 6) {
         value_counter = 0;
       }
-    }
-    value_counter++;
-    if (value_counter == 6) {
-      value_counter = 0;
-    }
-    delay(delay_anim * 100);
+      delay(delay_anim * 100);
     }
   }
 }
@@ -372,19 +381,18 @@ void default_6() {    //purple,blue scrolling
 //--------------------------Animation 1-----------------------------------------------------------
 void animation_1() {    //pulsing blues and greens - human
   int animation_1_colours[] = {96, 108, 120, 130, 140, 150, 160};
+  //  int animation_1_colours[] = {96, 100, 105, 110, 115, 120, 125};
   int random_colour = random(0, 6);
   int random_frame = random(0, 6);
   int frame_pulse_timer = 0;
+  relay_start_flag = false;
   animation_start_time = millis();
   while (millis() - animation_start_time <= ANIMATION_TIME) {
-    if (millis() - animation_start_time < RELAY_DELAY_TIME) {
-      relay_start_flag = false;
-    }
-    else {
+    if ((millis() - animation_start_time >= RELAY_DELAY_TIME) && (millis() - animation_start_time < RELAY_DELAY_TIME + 10)) {
       relay_start_time = millis();
       relay_start_flag = true;
     }
-    if ((relay_start_flag == true) && (millis() - relay_start_time <= RELAY_START_TIME)) {
+    if ((millis() - relay_start_time <= RELAY_START_TIME) && (relay_start_flag == true)) {
       digitalWrite(RELAY_PIN, HIGH);
     }
     else {
@@ -413,6 +421,17 @@ void animation_2() {   //strobe lights = expressive
   }
   animation_start_time = millis();
   while (millis() - animation_start_time <= ANIMATION_TIME) {
+    if ((millis() - animation_start_time >= RELAY_DELAY_TIME) && (millis() - animation_start_time < RELAY_DELAY_TIME + 10)) {
+      relay_start_time = millis();
+      relay_start_flag = true;
+    }
+    if ((millis() - relay_start_time <= RELAY_START_TIME) && (relay_start_flag == true)) {
+      digitalWrite(RELAY_PIN, HIGH);
+    }
+    else {
+      digitalWrite(RELAY_PIN, LOW);
+      relay_start_flag = false;
+    }
     random_frame_1 = random(0, 6);
     random_frame_2 = random(0, 6);
     frame_pulse_timer = millis();
@@ -431,6 +450,17 @@ void animation_3() {    //Scrolling rainbow = equal
   int colour_counter = 0;
   animation_start_time = millis();
   while (millis() - animation_start_time <= ANIMATION_TIME) {
+    if ((millis() - animation_start_time >= RELAY_DELAY_TIME) && (millis() - animation_start_time < RELAY_DELAY_TIME + 55)) {
+      relay_start_time = millis();
+      relay_start_flag = true;
+    }
+    if ((millis() - relay_start_time <= RELAY_START_TIME) && (relay_start_flag == true)) {
+      digitalWrite(RELAY_PIN, HIGH);
+    }
+    else {
+      digitalWrite(RELAY_PIN, LOW);
+      relay_start_flag = false;
+    }
     for (int f = 0; f < 6; f++) {
       showAnalogRGB(CHSV( animation_3_colours[colour_counter], 255, 255), f);
       delay(delay_anim);
@@ -452,22 +482,53 @@ void animation_4() {  //pulsing aqua - love
   hue = theme_hues[3];
   animation_start_time = millis();
   while (millis() - animation_start_time <= ANIMATION_TIME) {
+
+    if ((millis() - relay_start_time <= RELAY_START_TIME) && (relay_start_flag == true)) {
+      digitalWrite(RELAY_PIN, HIGH);
+    }
+    else {
+      digitalWrite(RELAY_PIN, LOW);
+      relay_start_flag = false;
+    }
     for (int i = 30; i <= 255; i++) {
       for (int f = 0; f < 6; f++) {
         showAnalogRGB(CHSV( hue, 255, i), f);
       }
       delay(delay_anim * 2);
+      if ((millis() - animation_start_time >= RELAY_DELAY_TIME) && (millis() - animation_start_time < RELAY_DELAY_TIME + 1000)) {
+        relay_start_time = millis();
+        relay_start_flag = true;
+      }
+      if ((millis() - relay_start_time <= RELAY_START_TIME) && (relay_start_flag == true)) {
+        digitalWrite(RELAY_PIN, HIGH);
+      }
+      else {
+        digitalWrite(RELAY_PIN, LOW);
+        relay_start_flag = false;
+      }
     }
-    delay(delay_anim * 100);
+    delay(delay_anim * 10);
     for (int r = 255; r >= 30; r--) {
       for (int f = 0; f < 6; f++) {
         showAnalogRGB(CHSV( hue, 255, r), f);
       }
       delay(delay_anim * 2);
+      if ((millis() - animation_start_time >= RELAY_DELAY_TIME) && (millis() - animation_start_time < RELAY_DELAY_TIME + 1000)) {
+        relay_start_time = millis();
+        relay_start_flag = true;
+      }
+      if ((millis() - relay_start_time <= RELAY_START_TIME) && (relay_start_flag == true)) {
+        digitalWrite(RELAY_PIN, HIGH);
+      }
+      else {
+        digitalWrite(RELAY_PIN, LOW);
+        relay_start_flag = false;
+      }
     }
     delay(delay_anim * 10);
   }
 }
+
 
 //--------------------------Animation 5-----------------------------------------------------------
 void animation_5() {    //Scrolling yellow = transparency
@@ -476,6 +537,17 @@ void animation_5() {    //Scrolling yellow = transparency
   int value_counter = 0;
   animation_start_time = millis();
   while (millis() - animation_start_time <= ANIMATION_TIME) {
+    if ((millis() - animation_start_time >= RELAY_DELAY_TIME) && (millis() - animation_start_time < RELAY_DELAY_TIME + 200)) {
+      relay_start_time = millis();
+      relay_start_flag = true;
+    }
+    if ((millis() - relay_start_time <= RELAY_START_TIME) && (relay_start_flag == true)) {
+      digitalWrite(RELAY_PIN, HIGH);
+    }
+    else {
+      digitalWrite(RELAY_PIN, LOW);
+      relay_start_flag = false;
+    }
     for (int f = 0; f < 6; f++) {
       showAnalogRGB(CHSV(35, 255, animation_5_values[value_counter]), f);
       delay(delay_anim * 2);
