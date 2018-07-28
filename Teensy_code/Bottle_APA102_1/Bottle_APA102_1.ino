@@ -1,3 +1,11 @@
+//****************************************************************************************************************************
+//  Thingking Studio (Pty) Ltd
+//  Product: Elrow x Absolut Cathedral
+//****************************************************************************************************************************
+// This code runs on the Teensy 3.2 marked "1" mounted in the in the bottle's electronics housing.
+// This controller must be connected to the USB cable provided during operation to receive comms from the touchscreen computer.
+// Please take note that the controller needs to be externally powered by the 5V supply before it can be programmed. 
+
 #include "FastLED.h"
 
 //----#DEFINES--------------------------------------------------------
@@ -19,15 +27,17 @@
 #define DEBUG_MODE false
 
 //----Variable definitions--------------------------------------------------------
+
 //****SERIAL COMMS*****************************************************
+
 //Run animation 1 to 5 
-const byte ANIMATION_BYTE_1 = '1';
-const byte ANIMATION_BYTE_2 = '2';
-const byte ANIMATION_BYTE_3 = '3';
-const byte ANIMATION_BYTE_4 = '4';
-const byte ANIMATION_BYTE_5 = '5';
-const byte YES_BYTE = 'Y';
-const byte NO_BYTE = 'N';
+byte ANIMATION_BYTE_1 = '1';
+byte ANIMATION_BYTE_2 = '2';
+byte ANIMATION_BYTE_3 = '3';
+byte ANIMATION_BYTE_4 = '4';
+byte ANIMATION_BYTE_5 = '5';
+byte YES_BYTE = 'Y';
+byte NO_BYTE = 'N';
 
 //****Colour HSV******************************************************
 byte hue = 0;
@@ -38,6 +48,7 @@ byte animation_byte = 'x';
 boolean direction = FORWARD;    //for animations
 
 //****LED strip*******************************************************
+
 int THEME_HUE_BLUE = 0;
 int THEME_HUE_PURPLE = 230;
 int THEME_HUE_PINK = 190;
@@ -129,7 +140,7 @@ void check_serial_incoming() {
   }
 }
 
-//----------------------Default Animations-------------------------------------
+//----------------------Animations-------------------------------------
 //----------------------Default 1-------------------------------------
 void default_animation_1() {
   colorWipe(CHSV (0, 0, 0), 1);
@@ -150,8 +161,10 @@ void default_animation_2() {
     if (DEBUG_MODE) {
       Serial.println('default 7');
     }
+    //    while (abs(random_index_led_1 - random_index_led_2) < 5) {
     random_index_led_1 = random(NUM_LEDS);
     random_index_led_2 = random(NUM_LEDS);
+    //    }
     someColour(CHSV (random(0, 255), 255, 255), min(random_index_led_1, random_index_led_2), max(random_index_led_1, random_index_led_2));
     delay(300);
   }
@@ -369,6 +382,7 @@ void rainbow(int cycles, int speed) { // TODO direction
 
 // Sliding bar across LEDs
 void moving_strip(CHSV c, int speed_, int width_) {
+  //  CRGB c(147, 103, 0);
   // First slide the leds in one direction
   for (int i = 0; i <= NUM_LEDS - width_; i++) {
     for (int j = 0; j < width_; j++) {
@@ -376,12 +390,14 @@ void moving_strip(CHSV c, int speed_, int width_) {
     }
     FastLED.show();
     check_serial_incoming();
+    // now that we've shown the leds, reset to black for next loop
     for (int j = 0; j < 5; j++) {
       leds[i + j] = CRGB::Black;
     }
     delay(speed_);
   }
   delay(50);
+  // Now go in the other direction.
   for (int i = NUM_LEDS - width_; i >= 0; i--) {
     for (int j = 0; j < width_; j++) {
       leds[i + j] = c;
